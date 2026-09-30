@@ -419,3 +419,41 @@ kubectl scale deployment diplom-app --replicas=3
 Delete application:
 
 kubectl delete -f kubernetes/app/
+## CI/CD Pipeline
+
+Implemented using GitHub Actions and self-hosted runner.
+
+Pipeline:
+
+1. Developer pushes code to GitHub
+2. GitHub Actions starts workflow
+3. Self-hosted runner on k8s-master-01 executes build
+4. Docker image is built
+5. Image is pushed to Yandex Container Registry
+6. Kubernetes Deployment is updated
+7. Rolling update replaces application pods
+
+
+Runner:
+
+- Host: k8s-master-01
+- OS: Ubuntu 22.04.5 LTS
+- Runner: GitHub Actions self-hosted
+- Container runtime: Docker + containerd
+
+
+Container Registry:
+
+cr.yandex/crp6gcfckbknlsc51u2f/diplom-app
+
+
+Deployment:
+
+Current image:
+
+cr.yandex/crp6gcfckbknlsc51u2f/diplom-app:<git_commit_sha>
+
+
+Verification:
+
+kubectl rollout status deployment/diplom-app
