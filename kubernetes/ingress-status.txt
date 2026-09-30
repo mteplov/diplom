@@ -1,0 +1,2 @@
+NAMESPACE    NAME      CLASS   HOSTS   ADDRESS                   PORTS   AGE
+monitoring   grafana   nginx   *       10.20.20.10,10.20.30.15   80      25m
