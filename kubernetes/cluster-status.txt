@@ -1,0 +1,82 @@
+NAMESPACE       NAME                                                         READY   STATUS      RESTARTS   AGE
+default         pod/diplom-app-7b89c7459c-hqddw                              1/1     Running     0          151m
+default         pod/diplom-app-7b89c7459c-zt9rw                              1/1     Running     0          151m
+ingress-nginx   pod/ingress-nginx-admission-create-q4vnn                     0/1     Completed   0          27m
+ingress-nginx   pod/ingress-nginx-admission-patch-bz9ms                      0/1     Completed   0          27m
+ingress-nginx   pod/ingress-nginx-controller-7d6fcfb4d7-hxsjs                1/1     Running     0          5m58s
+ingress-nginx   pod/ingress-nginx-controller-7d6fcfb4d7-mxjfv                1/1     Running     0          5m58s
+kube-system     pod/calico-kube-controllers-59556d9b4c-2t5s6                 1/1     Running     0          4h51m
+kube-system     pod/calico-node-jsr4q                                        1/1     Running     0          4h49m
+kube-system     pod/calico-node-mczjk                                        1/1     Running     0          4h51m
+kube-system     pod/calico-node-qhcrm                                        1/1     Running     0          4h47m
+kube-system     pod/coredns-66bc5c9577-b8fml                                 1/1     Running     0          4h53m
+kube-system     pod/coredns-66bc5c9577-vf6sz                                 1/1     Running     0          4h53m
+kube-system     pod/etcd-k8s-master-01                                       1/1     Running     0          4h53m
+kube-system     pod/kube-apiserver-k8s-master-01                             1/1     Running     0          4h53m
+kube-system     pod/kube-controller-manager-k8s-master-01                    1/1     Running     0          4h53m
+kube-system     pod/kube-proxy-gcdg7                                         1/1     Running     0          4h49m
+kube-system     pod/kube-proxy-wctdx                                         1/1     Running     0          4h53m
+kube-system     pod/kube-proxy-xtsf7                                         1/1     Running     0          4h47m
+kube-system     pod/kube-scheduler-k8s-master-01                             1/1     Running     0          4h53m
+monitoring      pod/alertmanager-monitoring-kube-prometheus-alertmanager-0   2/2     Running     0          47m
+monitoring      pod/monitoring-grafana-946fb6cdd-nm62m                       3/3     Running     0          48m
+monitoring      pod/monitoring-kube-prometheus-operator-5fd65d66d4-n2dvq     1/1     Running     0          48m
+monitoring      pod/monitoring-kube-state-metrics-7b5bd68446-f6h6x           1/1     Running     0          48m
+monitoring      pod/monitoring-prometheus-node-exporter-7clj5                1/1     Running     0          48m
+monitoring      pod/monitoring-prometheus-node-exporter-drbzq                1/1     Running     0          48m
+monitoring      pod/monitoring-prometheus-node-exporter-pgdzl                1/1     Running     0          48m
+monitoring      pod/prometheus-monitoring-kube-prometheus-prometheus-0       2/2     Running     0          47m
+
+NAMESPACE       NAME                                                         TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)                         AGE
+default         service/diplom-app                                           NodePort    10.99.17.150     <none>        8080:30080/TCP                  152m
+default         service/kubernetes                                           ClusterIP   10.96.0.1        <none>        443/TCP                         4h53m
+ingress-nginx   service/ingress-nginx-controller                             NodePort    10.110.171.254   <none>        80:30545/TCP,443:31678/TCP      27m
+ingress-nginx   service/ingress-nginx-controller-admission                   ClusterIP   10.111.76.193    <none>        443/TCP                         27m
+kube-system     service/kube-dns                                             ClusterIP   10.96.0.10       <none>        53/UDP,53/TCP,9153/TCP          4h53m
+kube-system     service/monitoring-kube-prometheus-coredns                   ClusterIP   None             <none>        9153/TCP                        48m
+kube-system     service/monitoring-kube-prometheus-kube-controller-manager   ClusterIP   None             <none>        10257/TCP                       48m
+kube-system     service/monitoring-kube-prometheus-kube-etcd                 ClusterIP   None             <none>        2381/TCP                        48m
+kube-system     service/monitoring-kube-prometheus-kube-proxy                ClusterIP   None             <none>        10249/TCP                       48m
+kube-system     service/monitoring-kube-prometheus-kube-scheduler            ClusterIP   None             <none>        10259/TCP                       48m
+kube-system     service/monitoring-kube-prometheus-kubelet                   ClusterIP   None             <none>        10250/TCP,4194/TCP,10255/TCP    47m
+monitoring      service/alertmanager-operated                                ClusterIP   None             <none>        9093/TCP,9094/TCP,9094/UDP      47m
+monitoring      service/monitoring-grafana                                   NodePort    10.96.155.165    <none>        80:30090/TCP                    48m
+monitoring      service/monitoring-kube-prometheus-alertmanager              NodePort    10.99.168.228    <none>        9093:30092/TCP,8080:30125/TCP   48m
+monitoring      service/monitoring-kube-prometheus-operator                  ClusterIP   10.110.170.207   <none>        443/TCP                         48m
+monitoring      service/monitoring-kube-prometheus-prometheus                NodePort    10.97.56.40      <none>        9090:30091/TCP,8080:32257/TCP   48m
+monitoring      service/monitoring-kube-state-metrics                        ClusterIP   10.101.209.228   <none>        8080/TCP                        48m
+monitoring      service/monitoring-prometheus-node-exporter                  ClusterIP   10.102.137.143   <none>        9100/TCP                        48m
+monitoring      service/prometheus-operated                                  ClusterIP   None             <none>        9090/TCP                        47m
+
+NAMESPACE     NAME                                                 DESIRED   CURRENT   READY   UP-TO-DATE   AVAILABLE   NODE SELECTOR            AGE
+kube-system   daemonset.apps/calico-node                           3         3         3       3            3           kubernetes.io/os=linux   4h51m
+kube-system   daemonset.apps/kube-proxy                            3         3         3       3            3           kubernetes.io/os=linux   4h53m
+monitoring    daemonset.apps/monitoring-prometheus-node-exporter   3         3         3       3            3           kubernetes.io/os=linux   48m
+
+NAMESPACE       NAME                                                  READY   UP-TO-DATE   AVAILABLE   AGE
+default         deployment.apps/diplom-app                            2/2     2            2           151m
+ingress-nginx   deployment.apps/ingress-nginx-controller              2/2     2            2           27m
+kube-system     deployment.apps/calico-kube-controllers               1/1     1            1           4h51m
+kube-system     deployment.apps/coredns                               2/2     2            2           4h53m
+monitoring      deployment.apps/monitoring-grafana                    1/1     1            1           48m
+monitoring      deployment.apps/monitoring-kube-prometheus-operator   1/1     1            1           48m
+monitoring      deployment.apps/monitoring-kube-state-metrics         1/1     1            1           48m
+
+NAMESPACE       NAME                                                             DESIRED   CURRENT   READY   AGE
+default         replicaset.apps/diplom-app-7b89c7459c                            2         2         2       151m
+ingress-nginx   replicaset.apps/ingress-nginx-controller-597db4c64b              0         0         0       20m
+ingress-nginx   replicaset.apps/ingress-nginx-controller-59b48474cf              0         0         0       27m
+ingress-nginx   replicaset.apps/ingress-nginx-controller-7d6fcfb4d7              2         2         2       5m58s
+kube-system     replicaset.apps/calico-kube-controllers-59556d9b4c               1         1         1       4h51m
+kube-system     replicaset.apps/coredns-66bc5c9577                               2         2         2       4h53m
+monitoring      replicaset.apps/monitoring-grafana-946fb6cdd                     1         1         1       48m
+monitoring      replicaset.apps/monitoring-kube-prometheus-operator-5fd65d66d4   1         1         1       48m
+monitoring      replicaset.apps/monitoring-kube-state-metrics-7b5bd68446         1         1         1       48m
+
+NAMESPACE    NAME                                                                    READY   AGE
+monitoring   statefulset.apps/alertmanager-monitoring-kube-prometheus-alertmanager   1/1     47m
+monitoring   statefulset.apps/prometheus-monitoring-kube-prometheus-prometheus       1/1     47m
+
+NAMESPACE       NAME                                       STATUS     COMPLETIONS   DURATION   AGE
+ingress-nginx   job.batch/ingress-nginx-admission-create   Complete   1/1           8s         27m
+ingress-nginx   job.batch/ingress-nginx-admission-patch    Complete   1/1           9s         27m

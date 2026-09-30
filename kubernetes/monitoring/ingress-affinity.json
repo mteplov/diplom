@@ -1,0 +1,21 @@
+[
+ {
+  "op": "add",
+  "path": "/spec/template/spec/affinity",
+  "value": {
+    "podAntiAffinity": {
+      "requiredDuringSchedulingIgnoredDuringExecution": [
+        {
+          "labelSelector": {
+            "matchLabels": {
+              "app.kubernetes.io/component": "controller",
+              "app.kubernetes.io/name": "ingress-nginx"
+            }
+          },
+          "topologyKey": "kubernetes.io/hostname"
+        }
+      ]
+    }
+  }
+ }
+]
