@@ -1,0 +1,27 @@
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+
+# Terraform variables with secrets
+*.tfvars
+*.tfvars.json
+
+# Kubernetes configs
+.kube/
+admin.conf
+kubeconfig*
+
+# Ansible
+*.retry
+
+# SSH keys
+*.pem
+*.key
+
+# Logs
+*.log
+
+# OS
+.DS_Store

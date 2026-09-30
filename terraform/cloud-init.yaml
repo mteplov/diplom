@@ -1,0 +1,27 @@
+#cloud-config
+
+hostname: ${hostname}
+manage_etc_hosts: true
+
+users:
+  - name: teplov
+    gecos: Михаил Теплов
+    groups: sudo
+    shell: /bin/bash
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    lock_passwd: false
+    passwd: ${password_hash}
+    ssh_authorized_keys:
+      - ${ssh_public_key}
+
+ssh_pwauth: true
+disable_root: true
+
+package_update: true
+packages:
+  - curl
+  - ca-certificates
+  - gnupg
+  - apt-transport-https
+
+timezone: Europe/Moscow

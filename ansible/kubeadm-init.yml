@@ -1,0 +1,29 @@
+---
+- name: Initialize Kubernetes master
+  hosts: kube_master
+  become: true
+
+  tasks:
+    - name: Initialize cluster
+      command: >
+        kubeadm init
+        --apiserver-advertise-address=10.20.10.29
+        --pod-network-cidr=192.168.0.0/16
+      args:
+        creates: /etc/kubernetes/admin.conf
+
+    - name: Create kube config directory
+      become_user: teplov
+      file:
+        path: /home/teplov/.kube
+        state: directory
+        mode: '0755'
+
+    - name: Copy admin kubeconfig
+      copy:
+        src: /etc/kubernetes/admin.conf
+        dest: /home/teplov/.kube/config
+        remote_src: yes
+        owner: teplov
+        group: teplov
+        mode: '0600'
