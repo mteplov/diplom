@@ -1,10 +1,5 @@
-FROM python:3.12-slim
+FROM nginx:alpine
 
-WORKDIR /app
+COPY index.html /usr/share/nginx/html/index.html
 
-COPY app.py .
-COPY requirements.txt .
-
-EXPOSE 8080
-
-CMD ["python", "app.py"]
+EXPOSE 80

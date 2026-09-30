@@ -20,4 +20,4 @@ spec:
           image: cr.yandex/crp6gcfckbknlsc51u2f/diplom-app:1.0
           imagePullPolicy: Always
           ports:
-            - containerPort: 8080
+            - containerPort: 80
