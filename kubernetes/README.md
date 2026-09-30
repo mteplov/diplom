@@ -20,3 +20,19 @@ Apply:
 
 ```bash
 kubectl apply -f nginx/
+
+
+## Container Registry
+
+### Yandex Container Registry
+
+Production image:
+
+cr.yandex/crp6gcfckbknlsc51u2f/diplom-app:1.0
+
+
+### GitHub Container Registry
+
+Public package:
+
+ghcr.io/mteplov/diplom-app:1.0
