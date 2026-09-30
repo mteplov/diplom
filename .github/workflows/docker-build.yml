@@ -1,4 +1,4 @@
-name: Docker Build and Push
+name: Docker Build and Deploy
 
 on:
   push:
@@ -7,13 +7,13 @@ on:
 
 env:
   REGISTRY: cr.yandex
-  REGISTRY_ID: ${{ secrets.YC_REGISTRY_ID }}
+  REGISTRY_ID: crp6gcfckbknlsc51u2f
   IMAGE_NAME: diplom-app
 
 jobs:
-  build:
+  deploy:
 
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     steps:
 
@@ -42,6 +42,9 @@ jobs:
             $REGISTRY/$REGISTRY_ID/$IMAGE_NAME:${{ github.sha }}
 
 
-      - name: Show image
+      - name: Deploy to Kubernetes
         run: |
-          docker images
+          kubectl set image deployment/diplom-app \
+          diplom-app=$REGISTRY/$REGISTRY_ID/$IMAGE_NAME:${{ github.sha }}
+
+          kubectl rollout status deployment/diplom-app
