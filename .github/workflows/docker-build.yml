@@ -1,9 +1,14 @@
-name: Docker Build
+name: Docker Build and Push
 
 on:
   push:
     branches:
       - master
+
+env:
+  REGISTRY: cr.yandex
+  REGISTRY_ID: ${{ secrets.YC_REGISTRY_ID }}
+  IMAGE_NAME: diplom-app
 
 jobs:
   build:
@@ -11,15 +16,32 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+
       - name: Checkout repository
         uses: actions/checkout@v4
+
+
+      - name: Login to Yandex Container Registry
+        run: |
+          echo "${{ secrets.YC_TOKEN }}" | docker login \
+            --username iam \
+            --password-stdin \
+            cr.yandex
+
 
       - name: Build Docker image
         run: |
           docker build \
-            -t diplom-app:${{ github.sha }} \
+            -t $REGISTRY/$REGISTRY_ID/$IMAGE_NAME:${{ github.sha }} \
             ./app
 
-      - name: Show images
+
+      - name: Push Docker image
+        run: |
+          docker push \
+            $REGISTRY/$REGISTRY_ID/$IMAGE_NAME:${{ github.sha }}
+
+
+      - name: Show image
         run: |
           docker images
