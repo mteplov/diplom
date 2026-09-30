@@ -1,0 +1,18 @@
+alertmanager:
+  enabled: true
+  service:
+    nodePort: 30092
+    type: NodePort
+
+grafana:
+  adminPassword: Netology2026!
+  enabled: true
+  service:
+    nodePort: 30090
+    type: NodePort
+
+prometheus:
+  enabled: true
+  service:
+    nodePort: 30091
+    type: NodePort
