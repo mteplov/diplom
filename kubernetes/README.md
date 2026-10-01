@@ -356,6 +356,7 @@ prepare.yml
 containerd.yml
 kubernetes-install.yml
 kubeadm-init.yml
+kubeadm-join.yml
 
 Configured:
 

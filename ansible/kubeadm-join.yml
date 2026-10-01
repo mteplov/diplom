@@ -1,0 +1,36 @@
+---
+- name: Generate Kubernetes worker join command
+  hosts: kube_master
+  become: true
+  tasks:
+    - name: Check Kubernetes admin configuration
+      stat:
+        path: /etc/kubernetes/admin.conf
+      register: kubeadm_admin_conf
+
+    - name: Fail if Kubernetes master is not initialized
+      fail:
+        msg: "Kubernetes master is not initialized: /etc/kubernetes/admin.conf is missing"
+      when: not kubeadm_admin_conf.stat.exists
+
+    - name: Generate worker join command
+      command: kubeadm token create --print-join-command
+      register: kubeadm_join_command
+      changed_when: false
+
+    - name: Store join command for workers
+      set_fact:
+        worker_join_command: "{{ kubeadm_join_command.stdout }}"
+
+- name: Join Kubernetes workers
+  hosts: kube_workers
+  become: true
+  tasks:
+    - name: Check worker kubelet configuration
+      stat:
+        path: /etc/kubernetes/kubelet.conf
+      register: kubelet_config
+
+    - name: Join worker to Kubernetes cluster
+      command: "{{ hostvars[groups['kube_master'][0]].worker_join_command }}"
+      when: not kubelet_config.stat.exists
