@@ -19,3 +19,8 @@ variable "password_hash" {
   type        = string
   sensitive   = true
 }
+
+variable "ssh_public_key" {
+  description = "SSH public key for the teplov user"
+  type        = string
+}

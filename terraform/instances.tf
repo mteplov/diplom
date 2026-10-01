@@ -32,7 +32,7 @@ resource "yandex_compute_instance" "k8s_master" {
     user-data = templatefile("${path.module}/cloud-init.yaml", {
       hostname       = "k8s-master-01"
       password_hash  = var.password_hash
-      ssh_public_key = local.ssh_public_key
+      ssh_public_key = var.ssh_public_key
     })
   }
 }
@@ -72,7 +72,7 @@ resource "yandex_compute_instance" "k8s_worker_01" {
     user-data = templatefile("${path.module}/cloud-init.yaml", {
       hostname       = "k8s-worker-01"
       password_hash  = var.password_hash
-      ssh_public_key = local.ssh_public_key
+      ssh_public_key = var.ssh_public_key
     })
   }
 }
@@ -112,7 +112,7 @@ resource "yandex_compute_instance" "k8s_worker_02" {
     user-data = templatefile("${path.module}/cloud-init.yaml", {
       hostname       = "k8s-worker-02"
       password_hash  = var.password_hash
-      ssh_public_key = local.ssh_public_key
+      ssh_public_key = var.ssh_public_key
     })
   }
 }
