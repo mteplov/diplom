@@ -65,9 +65,9 @@ kube-prometheus-stack
 
 | Node | Role | IP |
 |-|-|-|
-| k8s-master-01 | Control Plane | 10.20.10.29 |
-| k8s-worker-01 | Worker | 10.20.20.10 |
-| k8s-worker-02 | Worker | 10.20.30.15 |
+| k8s-master-01 | Control Plane | dynamic internal IP |
+| k8s-worker-01 | Worker | dynamic internal IP |
+| k8s-worker-02 | Worker | dynamic internal IP |
 
 
 Cluster scheme:

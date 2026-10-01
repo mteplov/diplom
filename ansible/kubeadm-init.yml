@@ -4,10 +4,18 @@
   become: true
 
   tasks:
+    - name: Detect master internal IP
+      set_fact:
+        kube_apiserver_advertise_address: "{{ ansible_default_ipv4.address }}"
+
+    - name: Show master internal IP
+      debug:
+        msg: "Kubernetes API server will advertise on {{ kube_apiserver_advertise_address }}"
+
     - name: Initialize cluster
       command: >
         kubeadm init
-        --apiserver-advertise-address=10.20.10.29
+        --apiserver-advertise-address={{ kube_apiserver_advertise_address }}
         --pod-network-cidr=192.168.0.0/16
       args:
         creates: /etc/kubernetes/admin.conf
