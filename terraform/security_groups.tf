@@ -39,6 +39,20 @@ resource "yandex_vpc_security_group" "k8s_master" {
   }
 
   ingress {
+    protocol       = "TCP"
+    description    = "HTTP"
+    port           = 80
+    v4_cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    protocol       = "TCP"
+    description    = "HTTPS"
+    port           = 443
+    v4_cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
     protocol       = "ANY"
     description    = "Internal traffic"
     v4_cidr_blocks = ["10.20.0.0/16"]
@@ -50,7 +64,6 @@ resource "yandex_vpc_security_group" "k8s_master" {
     v4_cidr_blocks = ["0.0.0.0/0"]
   }
 }
-
 
 resource "yandex_vpc_security_group" "k8s_worker" {
   name       = "k8s-worker-sg"
@@ -82,6 +95,20 @@ resource "yandex_vpc_security_group" "k8s_worker" {
     description    = "NodePort"
     from_port      = 30000
     to_port        = 32767
+    v4_cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    protocol       = "TCP"
+    description    = "HTTP"
+    port           = 80
+    v4_cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    protocol       = "TCP"
+    description    = "HTTPS"
+    port           = 443
     v4_cidr_blocks = ["0.0.0.0/0"]
   }
 
