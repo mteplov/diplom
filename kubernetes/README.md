@@ -367,9 +367,19 @@ Kubernetes components
 kubeadm initialization
 worker node configuration
 
+Generate Ansible inventory from current Terraform public IP outputs:
+
+./ansible/generate-inventory.sh
+
+The generated inventory is stored in:
+
+ansible/inventory.ini
+
+The inventory file is generated locally and is not committed to Git.
+
 Run example:
 
-ansible-playbook -i inventory.ini prepare.yml
+ansible-playbook -i ansible/inventory.ini ansible/prepare.yml
 Kubernetes verification
 
 Get cluster nodes:
