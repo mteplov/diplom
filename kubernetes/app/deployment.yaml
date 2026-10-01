@@ -17,7 +17,7 @@ spec:
         - name: yc-registry-secret
       containers:
         - name: diplom-app
-          image: cr.yandex/crp6gcfckbknlsc51u2f/diplom-app:1.0
+          image: cr.yandex/crp6gcfckbknlsc51u2f/diplom-app:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 80
