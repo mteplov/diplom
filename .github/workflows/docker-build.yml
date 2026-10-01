@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - master
+    tags:
+      - 'v*'
 
 env:
   REGISTRY: cr.yandex
@@ -12,14 +14,11 @@ env:
 
 jobs:
   deploy:
-
     runs-on: self-hosted
 
     steps:
-
       - name: Checkout repository
         uses: actions/checkout@v4
-
 
       - name: Login to Yandex Container Registry
         run: |
@@ -28,23 +27,32 @@ jobs:
             --password-stdin \
             cr.yandex
 
+      - name: Set Docker image tag
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            IMAGE_TAG="${GITHUB_REF_NAME}"
+          else
+            IMAGE_TAG="${GITHUB_SHA}"
+          fi
+
+          echo "IMAGE_TAG=${IMAGE_TAG}" >> "$GITHUB_ENV"
+          echo "IMAGE=${REGISTRY}/${REGISTRY_ID}/${IMAGE_NAME}:${IMAGE_TAG}" >> "$GITHUB_ENV"
+
+          echo "Docker image: ${REGISTRY}/${REGISTRY_ID}/${IMAGE_NAME}:${IMAGE_TAG}"
 
       - name: Build Docker image
         run: |
           docker build \
-            -t $REGISTRY/$REGISTRY_ID/$IMAGE_NAME:${{ github.sha }} \
+            -t "${IMAGE}" \
             ./app
-
 
       - name: Push Docker image
         run: |
-          docker push \
-            $REGISTRY/$REGISTRY_ID/$IMAGE_NAME:${{ github.sha }}
-
+          docker push "${IMAGE}"
 
       - name: Deploy to Kubernetes
         run: |
           kubectl set image deployment/diplom-app \
-          diplom-app=$REGISTRY/$REGISTRY_ID/$IMAGE_NAME:${{ github.sha }}
+            diplom-app="${IMAGE}"
 
           kubectl rollout status deployment/diplom-app
