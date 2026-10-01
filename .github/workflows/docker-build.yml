@@ -21,8 +21,10 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Login to Yandex Container Registry
+        env:
+          YC_TOKEN: ${{ secrets.YC_TOKEN }}
         run: |
-          echo "${{ secrets.YC_TOKEN }}" | docker login \
+          echo "$YC_TOKEN" | docker login \
             --username iam \
             --password-stdin \
             cr.yandex
@@ -50,9 +52,21 @@ jobs:
         run: |
           docker push "${IMAGE}"
 
+      - name: Refresh Kubernetes registry secret
+        env:
+          YC_TOKEN: ${{ secrets.YC_TOKEN }}
+        run: |
+          kubectl create secret docker-registry yc-registry-secret \
+            --docker-server=cr.yandex \
+            --docker-username=iam \
+            --docker-password="$YC_TOKEN" \
+            --namespace=default \
+            --dry-run=client \
+            -o yaml | kubectl apply -f -
+
       - name: Deploy to Kubernetes
         run: |
           kubectl set image deployment/diplom-app \
             diplom-app="${IMAGE}"
 
-          kubectl rollout status deployment/diplom-app
+          kubectl rollout status deployment/diplom-app --timeout=5m
