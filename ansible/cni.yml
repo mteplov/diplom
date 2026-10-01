@@ -1,0 +1,43 @@
+---
+- name: Install Calico CNI
+  hosts: kube_master
+  become: true
+
+  vars:
+    calico_version: "v3.32.2"
+    calico_manifest_url: "https://raw.githubusercontent.com/projectcalico/calico/{{ calico_version }}/manifests/calico.yaml"
+    calico_manifest_remote: "/tmp/calico.yaml"
+
+  tasks:
+
+    - name: Download Calico manifest
+      get_url:
+        url: "{{ calico_manifest_url }}"
+        dest: "{{ calico_manifest_remote }}"
+        mode: '0644'
+
+    - name: Install Calico CNI
+      become_user: teplov
+      command:
+        cmd: kubectl apply -f {{ calico_manifest_remote }}
+
+    - name: Wait for Calico nodes
+      become_user: teplov
+      command:
+        cmd: kubectl wait --for=condition=Ready pod -l k8s-app=calico-node -n kube-system --timeout=5m
+
+    - name: Wait for Kubernetes master
+      become_user: teplov
+      command:
+        cmd: kubectl wait --for=condition=Ready node --all --timeout=5m
+
+    - name: Show cluster nodes after CNI installation
+      become_user: teplov
+      command:
+        cmd: kubectl get nodes -o wide
+      register: nodes_status
+      changed_when: false
+
+    - name: Show cluster nodes
+      debug:
+        var: nodes_status.stdout

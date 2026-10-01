@@ -26,19 +26,32 @@
         --namespace ingress-nginx
         --create-namespace
         --version {{ ingress_nginx_chart_version }}
-        --set controller.replicaCount=2
-        --set controller.service.type=NodePort
-        --set controller.service.nodePorts.http=30545
-        --set controller.service.nodePorts.https=31678
+        --set controller.kind=DaemonSet
+        --set controller.hostNetwork=true
+        --set controller.dnsPolicy=ClusterFirstWithHostNet
+        --set controller.service.type=ClusterIP
+        --set controller.tolerations[0].key=node-role.kubernetes.io/control-plane
+        --set controller.tolerations[0].operator=Exists
+        --set controller.tolerations[0].effect=NoSchedule
         --wait
         --timeout 5m
 
     - name: Check ingress-nginx pods
       become_user: teplov
-      command: kubectl get pods -n ingress-nginx
+      command: kubectl get pods -n ingress-nginx -o wide
       register: ingress_pods
       changed_when: false
 
     - name: Show ingress-nginx pods
       debug:
         var: ingress_pods.stdout
+
+    - name: Check ingress-nginx service
+      become_user: teplov
+      command: kubectl get svc -n ingress-nginx
+      register: ingress_services
+      changed_when: false
+
+    - name: Show ingress-nginx service
+      debug:
+        var: ingress_services.stdout

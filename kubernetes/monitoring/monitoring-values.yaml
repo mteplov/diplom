@@ -1,18 +1,14 @@
 alertmanager:
   enabled: true
   service:
-    nodePort: 30092
-    type: NodePort
+    type: ClusterIP
 
 grafana:
-  adminPassword: Netology2026!
   enabled: true
   service:
-    nodePort: 30090
-    type: NodePort
+    type: ClusterIP
 
 prometheus:
   enabled: true
   service:
-    nodePort: 30091
-    type: NodePort
+    type: ClusterIP

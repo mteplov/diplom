@@ -25,3 +25,15 @@ packages:
   - apt-transport-https
 
 timezone: Europe/Moscow
+
+write_files:
+  - path: /etc/ssh/sshd_config.d/99-diplom.conf
+    permissions: "0644"
+    owner: root:root
+    content: |
+      MaxStartups 100:30:200
+      MaxSessions 50
+      LoginGraceTime 30
+
+runcmd:
+  - systemctl restart ssh

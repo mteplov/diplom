@@ -1,0 +1,313 @@
+---
+- name: Install Docker, Terraform and GitHub Actions Runner
+  hosts: kube_master
+  become: true
+
+  vars:
+    runner_user: teplov
+    runner_dir: /opt/actions-runner
+    github_repo: "https://github.com/mteplov/diplom"
+
+    terraform_version: "1.12.1"
+    terraform_zip: "terraform_{{ terraform_version }}_linux_amd64.zip"
+    terraform_url: >-
+      https://hashicorp-releases.yandexcloud.net/terraform/{{ terraform_version }}/{{ terraform_zip }}
+
+  tasks:
+
+    # ============================================================
+    # Docker
+    # ============================================================
+
+    - name: Install Docker prerequisites
+      ansible.builtin.apt:
+        name:
+          - ca-certificates
+          - curl
+          - gnupg
+          - lsb-release
+        state: present
+        update_cache: true
+
+    - name: Create Docker keyrings directory
+      ansible.builtin.file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: "0755"
+
+    - name: Remove old Docker repository
+      ansible.builtin.file:
+        path: /etc/apt/sources.list.d/docker.list
+        state: absent
+
+    - name: Remove old Docker ASCII key
+      ansible.builtin.file:
+        path: /etc/apt/keyrings/docker.asc
+        state: absent
+
+    - name: Add Docker GPG key
+      ansible.builtin.shell: |
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg |
+        gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+      args:
+        creates: /etc/apt/keyrings/docker.gpg
+
+    - name: Add Docker repository
+      ansible.builtin.apt_repository:
+        repo: >
+          deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.gpg]
+          https://download.docker.com/linux/ubuntu
+          {{ ansible_distribution_release }} stable
+        state: present
+        filename: docker
+
+    - name: Install Docker
+      ansible.builtin.apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+        state: present
+        update_cache: true
+
+    - name: Enable Docker
+      ansible.builtin.systemd:
+        name: docker
+        enabled: true
+        state: started
+
+    - name: Add runner user to docker group
+      ansible.builtin.user:
+        name: "{{ runner_user }}"
+        groups: docker
+        append: true
+
+    # ============================================================
+    # Terraform CLI
+    # ============================================================
+
+    - name: Install Terraform prerequisites
+      ansible.builtin.apt:
+        name:
+          - curl
+          - unzip
+        state: present
+        update_cache: true
+
+    - name: Check installed Terraform version
+      ansible.builtin.command:
+        cmd: terraform version
+      register: installed_terraform
+      changed_when: false
+      failed_when: false
+
+    - name: Download Terraform from Yandex mirror
+      ansible.builtin.get_url:
+        url: "{{ terraform_url }}"
+        dest: "/tmp/{{ terraform_zip }}"
+        mode: "0644"
+      when: >
+        installed_terraform.rc != 0 or
+        terraform_version not in installed_terraform.stdout
+
+    - name: Install Terraform binary
+      ansible.builtin.unarchive:
+        src: "/tmp/{{ terraform_zip }}"
+        dest: /usr/local/bin
+        remote_src: true
+        owner: root
+        group: root
+        mode: "0755"
+      when: >
+        installed_terraform.rc != 0 or
+        terraform_version not in installed_terraform.stdout
+
+    - name: Remove Terraform archive
+      ansible.builtin.file:
+        path: "/tmp/{{ terraform_zip }}"
+        state: absent
+
+    - name: Verify Terraform installation
+      ansible.builtin.command:
+        cmd: terraform version
+      register: terraform_version_check
+      changed_when: false
+
+    # ============================================================
+    # Terraform provider mirror
+    # ============================================================
+
+    - name: Create Terraform CLI config directory
+      ansible.builtin.file:
+        path: "/home/{{ runner_user }}"
+        state: directory
+        owner: "{{ runner_user }}"
+        group: "{{ runner_user }}"
+        mode: "0755"
+
+    - name: Configure Terraform Yandex provider mirror
+      ansible.builtin.copy:
+        dest: "/home/{{ runner_user }}/.terraformrc"
+        owner: "{{ runner_user }}"
+        group: "{{ runner_user }}"
+        mode: "0644"
+        content: |
+          provider_installation {
+            network_mirror {
+              url = "https://terraform-mirror.yandexcloud.net/registry.terraform.io/"
+              include = [
+                "registry.terraform.io/*/*"
+              ]
+            }
+
+            direct {
+              exclude = [
+                "registry.terraform.io/*/*"
+              ]
+            }
+          }
+
+    # ============================================================
+    # GitHub Actions Runner prerequisites
+    # ============================================================
+
+    - name: Check GITHUB_RUNNER_TOKEN
+      ansible.builtin.assert:
+        that:
+          - lookup('env', 'GITHUB_RUNNER_TOKEN') | length > 0
+        fail_msg: >
+          Environment variable GITHUB_RUNNER_TOKEN is not set.
+          Export it before running Ansible.
+
+    - name: Install GitHub Runner prerequisites
+      ansible.builtin.apt:
+        name:
+          - curl
+          - jq
+          - git
+          - unzip
+        state: present
+        update_cache: true
+
+    # ============================================================
+    # GitHub Actions Runner
+    # ============================================================
+
+    - name: Create runner directory
+      ansible.builtin.file:
+        path: "{{ runner_dir }}"
+        state: directory
+        owner: "{{ runner_user }}"
+        group: "{{ runner_user }}"
+        mode: "0755"
+
+    - name: Get latest GitHub Actions Runner version
+      ansible.builtin.shell: |
+        curl -fsSL \
+          https://api.github.com/repos/actions/runner/releases/latest |
+          jq -r '.tag_name'
+      register: runner_version
+      changed_when: false
+
+    - name: Set runner version
+      ansible.builtin.set_fact:
+        runner_version_clean: "{{ runner_version.stdout | trim | regex_replace('^v', '') }}"
+
+    - name: Check installed runner
+      ansible.builtin.stat:
+        path: "{{ runner_dir }}/bin/Runner.Listener"
+      register: runner_binary
+
+    - name: Download GitHub Actions Runner
+      ansible.builtin.get_url:
+        url: >-
+          https://github.com/actions/runner/releases/download/v{{ runner_version_clean }}/actions-runner-linux-x64-{{ runner_version_clean }}.tar.gz
+        dest: /tmp/actions-runner.tar.gz
+        mode: "0644"
+      when: not runner_binary.stat.exists
+
+    - name: Extract GitHub Actions Runner
+      ansible.builtin.unarchive:
+        src: /tmp/actions-runner.tar.gz
+        dest: "{{ runner_dir }}"
+        remote_src: true
+        owner: "{{ runner_user }}"
+        group: "{{ runner_user }}"
+      when: not runner_binary.stat.exists
+
+    - name: Remove runner archive
+      ansible.builtin.file:
+        path: /tmp/actions-runner.tar.gz
+        state: absent
+
+    - name: Check runner configuration
+      ansible.builtin.stat:
+        path: "{{ runner_dir }}/.runner"
+      register: runner_config
+
+    - name: Configure GitHub Actions Runner
+      ansible.builtin.command:
+        cmd: >
+          ./config.sh
+          --unattended
+          --url {{ github_repo }}
+          --token {{ lookup('env', 'GITHUB_RUNNER_TOKEN') }}
+          --name k8s-master-01
+          --labels self-hosted,k8s-master,diplom
+          --work _work
+          --replace
+      args:
+        chdir: "{{ runner_dir }}"
+      become_user: "{{ runner_user }}"
+      when: not runner_config.stat.exists
+
+    - name: Check GitHub Runner service
+      ansible.builtin.stat:
+        path: /etc/systemd/system/actions.runner.mteplov-diplom.k8s-master-01.service
+      register: runner_service_file
+
+    - name: Install GitHub Actions Runner service
+      ansible.builtin.command:
+        cmd: ./svc.sh install {{ runner_user }}
+      args:
+        chdir: "{{ runner_dir }}"
+      when: not runner_service_file.stat.exists
+
+    - name: Enable and start GitHub Actions Runner
+      ansible.builtin.systemd:
+        name: actions.runner.mteplov-diplom.k8s-master-01.service
+        enabled: true
+        state: started
+        daemon_reload: true
+
+    # ============================================================
+    # Verification
+    # ============================================================
+
+    - name: Check Docker
+      ansible.builtin.command:
+        cmd: docker --version
+      become_user: "{{ runner_user }}"
+      register: docker_version
+      changed_when: false
+
+    - name: Check Terraform
+      ansible.builtin.command:
+        cmd: terraform version
+      register: terraform_version_final
+      changed_when: false
+
+    - name: Check GitHub Runner service
+      ansible.builtin.systemd:
+        name: actions.runner.mteplov-diplom.k8s-master-01.service
+      register: runner_service_status
+      changed_when: false
+
+    - name: Show installed versions
+      ansible.builtin.debug:
+        msg:
+          - "{{ docker_version.stdout }}"
+          - "{{ terraform_version_final.stdout }}"
+          - "GitHub Actions Runner service: {{ runner_service_status.status.ActiveState }}"

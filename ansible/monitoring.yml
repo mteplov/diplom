@@ -10,19 +10,31 @@
 
   tasks:
 
+    - name: Check GRAFANA_ADMIN_PASSWORD on Ansible controller
+      delegate_to: localhost
+      become: false
+      ansible.builtin.assert:
+        that:
+          - lookup('env', 'GRAFANA_ADMIN_PASSWORD') | length > 0
+        fail_msg: >
+          GRAFANA_ADMIN_PASSWORD is not set.
+          The deployment script must generate it before running Ansible.
+
     - name: Add Prometheus Community Helm repository
       become_user: teplov
-      command: helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+      ansible.builtin.command:
+        cmd: helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
       register: helm_repo_add
       changed_when: "'has been added' in helm_repo_add.stdout"
 
     - name: Update Helm repositories
       become_user: teplov
-      command: helm repo update
+      ansible.builtin.command:
+        cmd: helm repo update
       changed_when: false
 
     - name: Copy monitoring values to Kubernetes master
-      copy:
+      ansible.builtin.copy:
         src: "{{ monitoring_values_source }}"
         dest: "{{ monitoring_values_remote }}"
         owner: teplov
@@ -31,21 +43,25 @@
 
     - name: Install kube-prometheus-stack
       become_user: teplov
-      command: >
-        helm upgrade --install monitoring prometheus-community/kube-prometheus-stack
-        --namespace monitoring
-        --create-namespace
-        --version {{ monitoring_chart_version }}
-        --values {{ monitoring_values_remote }}
-        --wait
-        --timeout 10m
+      ansible.builtin.command:
+        cmd: >
+          helm upgrade --install monitoring prometheus-community/kube-prometheus-stack
+          --namespace monitoring
+          --create-namespace
+          --version {{ monitoring_chart_version }}
+          --values {{ monitoring_values_remote }}
+          --set-string grafana.adminPassword={{ lookup('env', 'GRAFANA_ADMIN_PASSWORD') }}
+          --wait
+          --timeout 10m
+      no_log: true
 
     - name: Check monitoring pods
       become_user: teplov
-      command: kubectl get pods -n monitoring
+      ansible.builtin.command:
+        cmd: kubectl get pods -n monitoring
       register: monitoring_pods
       changed_when: false
 
     - name: Show monitoring pods
-      debug:
+      ansible.builtin.debug:
         var: monitoring_pods.stdout

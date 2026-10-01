@@ -1,6 +1,5 @@
 terraform {
   backend "s3" {
-    bucket = "teplov-netology-diplom-tfstate"
     key    = "infrastructure/terraform.tfstate"
     region = "ru-central1"
 

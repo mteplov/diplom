@@ -22,9 +22,23 @@
         mode: '0755'
 
     - name: Download Kubernetes GPG key
-      shell: |
-        curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.34/deb/Release.key \
-        | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+      ansible.builtin.get_url:
+        url: https://pkgs.k8s.io/core:/stable:/v1.34/deb/Release.key
+        dest: /tmp/kubernetes-release.key
+        mode: "0644"
+
+    - name: Convert Kubernetes GPG key to keyring
+      ansible.builtin.command:
+        cmd: >
+          gpg --batch --yes --dearmor
+          --output /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+          /tmp/kubernetes-release.key
+      changed_when: true
+
+    - name: Remove temporary Kubernetes GPG key
+      ansible.builtin.file:
+        path: /tmp/kubernetes-release.key
+        state: absent
 
     - name: Add Kubernetes repository
       apt_repository:

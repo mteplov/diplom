@@ -1,0 +1,36 @@
+---
+# 1. Prepare all Kubernetes nodes
+- import_playbook: prepare.yml
+
+# 2. Install containerd
+- import_playbook: containerd.yml
+
+# 3. Install Docker, Terraform and GitHub Actions Runner
+- import_playbook: runner.yml
+
+# 4. Install Kubernetes packages
+- import_playbook: kubernetes-install.yml
+
+# 5. Initialize Kubernetes control plane
+- import_playbook: kubeadm-init.yml
+
+# 6. Install Kubernetes CNI
+- import_playbook: cni.yml
+
+# 7. Join Kubernetes workers
+- import_playbook: kubeadm-join.yml
+
+# 8. Install Helm
+- import_playbook: helm.yml
+
+# 9. Install ingress-nginx
+- import_playbook: ingress-nginx.yml
+
+# 10. Install monitoring
+- import_playbook: monitoring.yml
+
+# 11. Configure Grafana ingress
+- import_playbook: monitoring-ingress.yml
+
+# 12. Deploy application
+- import_playbook: app.yml

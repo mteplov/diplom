@@ -2,35 +2,60 @@
 - name: Generate Kubernetes worker join command
   hosts: kube_master
   become: true
+
   tasks:
     - name: Check Kubernetes admin configuration
-      stat:
+      ansible.builtin.stat:
         path: /etc/kubernetes/admin.conf
       register: kubeadm_admin_conf
 
     - name: Fail if Kubernetes master is not initialized
-      fail:
-        msg: "Kubernetes master is not initialized: /etc/kubernetes/admin.conf is missing"
+      ansible.builtin.fail:
+        msg: >-
+          Kubernetes master is not initialized:
+          /etc/kubernetes/admin.conf is missing.
+          Master initialization or SSH connectivity failed earlier.
       when: not kubeadm_admin_conf.stat.exists
 
     - name: Generate worker join command
-      command: kubeadm token create --print-join-command
+      ansible.builtin.command:
+        cmd: kubeadm token create --print-join-command
       register: kubeadm_join_command
       changed_when: false
 
     - name: Store join command for workers
-      set_fact:
-        worker_join_command: "{{ kubeadm_join_command.stdout }}"
+      ansible.builtin.set_fact:
+        worker_join_command: "{{ kubeadm_join_command.stdout | trim }}"
+
+    - name: Verify worker join command was generated
+      ansible.builtin.assert:
+        that:
+          - worker_join_command is defined
+          - worker_join_command | length > 0
+        fail_msg: "Failed to generate Kubernetes worker join command on master."
+
 
 - name: Join Kubernetes workers
   hosts: kube_workers
   become: true
+
   tasks:
+    - name: Check that Kubernetes master generated worker join command
+      ansible.builtin.assert:
+        that:
+          - hostvars[groups['kube_master'][0]].worker_join_command is defined
+          - hostvars[groups['kube_master'][0]].worker_join_command | length > 0
+        fail_msg: >-
+          Kubernetes master did not provide a worker join command.
+          The master may have been temporarily unreachable or
+          Kubernetes initialization did not complete.
+
     - name: Check worker kubelet configuration
-      stat:
+      ansible.builtin.stat:
         path: /etc/kubernetes/kubelet.conf
       register: kubelet_config
 
     - name: Join worker to Kubernetes cluster
-      command: "{{ hostvars[groups['kube_master'][0]].worker_join_command }}"
+      ansible.builtin.command:
+        cmd: "{{ hostvars[groups['kube_master'][0]].worker_join_command }}"
       when: not kubelet_config.stat.exists

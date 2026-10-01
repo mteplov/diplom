@@ -5,33 +5,50 @@
 
   tasks:
     - name: Detect master internal IP
-      set_fact:
+      ansible.builtin.set_fact:
         kube_apiserver_advertise_address: "{{ ansible_default_ipv4.address }}"
 
     - name: Show master internal IP
-      debug:
+      ansible.builtin.debug:
         msg: "Kubernetes API server will advertise on {{ kube_apiserver_advertise_address }}"
 
+    - name: Check Kubernetes admin configuration
+      ansible.builtin.stat:
+        path: /etc/kubernetes/admin.conf
+      register: kubeadm_admin_conf
+
     - name: Initialize cluster
-      command: >
+      ansible.builtin.command: >
         kubeadm init
         --apiserver-advertise-address={{ kube_apiserver_advertise_address }}
         --pod-network-cidr=192.168.0.0/16
-      args:
-        creates: /etc/kubernetes/admin.conf
+      async: 900
+      poll: 10
+      register: kubeadm_init_result
+      when: not kubeadm_admin_conf.stat.exists
+
+    - name: Verify Kubernetes admin configuration
+      ansible.builtin.stat:
+        path: /etc/kubernetes/admin.conf
+      register: kubeadm_admin_conf_after
+
+    - name: Fail if Kubernetes master initialization did not complete
+      ansible.builtin.fail:
+        msg: "Kubernetes master initialization did not complete: /etc/kubernetes/admin.conf is missing"
+      when: not kubeadm_admin_conf_after.stat.exists
 
     - name: Create kube config directory
       become_user: teplov
-      file:
+      ansible.builtin.file:
         path: /home/teplov/.kube
         state: directory
-        mode: '0755'
+        mode: "0755"
 
     - name: Copy admin kubeconfig
-      copy:
+      ansible.builtin.copy:
         src: /etc/kubernetes/admin.conf
         dest: /home/teplov/.kube/config
-        remote_src: yes
+        remote_src: true
         owner: teplov
         group: teplov
-        mode: '0600'
+        mode: "0600"
