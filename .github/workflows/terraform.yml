@@ -1,4 +1,4 @@
-name: Terraform CI
+name: Terraform CI/CD
 
 on:
   push:
@@ -29,8 +29,8 @@ env:
   TF_STATE_BUCKET: ${{ vars.TF_STATE_BUCKET }}
 
 jobs:
-  terraform:
-    name: Terraform validation
+  terraform-plan:
+    name: Terraform plan
     runs-on: self-hosted
 
     defaults:
@@ -58,3 +58,29 @@ jobs:
 
       - name: Terraform plan
         run: terraform plan -input=false -no-color
+
+  terraform-apply:
+    name: Terraform apply
+    needs: terraform-plan
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: self-hosted
+
+    defaults:
+      run:
+        working-directory: terraform
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Show Terraform version
+        run: terraform version
+
+      - name: Configure Terraform provider installation
+        run: cp "$GITHUB_WORKSPACE/terraform/.terraformrc" "$HOME/.terraformrc"
+
+      - name: Terraform init
+        run: terraform init -input=false -no-color -reconfigure -backend-config="bucket=${TF_STATE_BUCKET}"
+
+      - name: Terraform apply
+        run: terraform apply -input=false -auto-approve -no-color
