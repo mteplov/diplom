@@ -1,0 +1,32 @@
+---
+- name: Configure Grafana ingress
+  hosts: kube_master
+  become: true
+
+  vars:
+    grafana_ingress_source: "{{ playbook_dir }}/../kubernetes/monitoring/grafana-ingress.yaml"
+    grafana_ingress_remote: "/tmp/grafana-ingress.yaml"
+
+  tasks:
+
+    - name: Copy Grafana ingress manifest to Kubernetes master
+      copy:
+        src: "{{ grafana_ingress_source }}"
+        dest: "{{ grafana_ingress_remote }}"
+        owner: teplov
+        group: teplov
+        mode: '0644'
+
+    - name: Apply Grafana ingress
+      become_user: teplov
+      command: kubectl apply -f {{ grafana_ingress_remote }}
+
+    - name: Check Grafana ingress
+      become_user: teplov
+      command: kubectl get ingress grafana -n monitoring
+      register: grafana_ingress
+      changed_when: false
+
+    - name: Show Grafana ingress
+      debug:
+        var: grafana_ingress.stdout

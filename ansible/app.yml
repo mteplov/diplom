@@ -1,0 +1,92 @@
+---
+- name: Deploy diplom application
+  hosts: kube_master
+  become: true
+
+  vars:
+    app_deployment_source: "{{ playbook_dir }}/../kubernetes/app/deployment.yaml"
+    app_service_source: "{{ playbook_dir }}/../kubernetes/app/service.yaml"
+    app_ingress_source: "{{ playbook_dir }}/../kubernetes/app/ingress.yaml"
+
+    app_deployment_remote: "/tmp/diplom-app-deployment.yaml"
+    app_service_remote: "/tmp/diplom-app-service.yaml"
+    app_ingress_remote: "/tmp/diplom-app-ingress.yaml"
+
+  tasks:
+
+    - name: Check YC_TOKEN on Ansible controller
+      delegate_to: localhost
+      become: false
+      ansible.builtin.assert:
+        that:
+          - lookup('env', 'YC_TOKEN') | length > 0
+        fail_msg: "YC_TOKEN is not set on the Ansible controller."
+
+    - name: Create Yandex Container Registry secret
+      become_user: teplov
+      ansible.builtin.shell: |
+        kubectl create secret docker-registry yc-registry-secret \
+          --docker-server=cr.yandex \
+          --docker-username=iam \
+          --docker-password="$YC_TOKEN" \
+          --namespace=default \
+          --dry-run=client \
+          -o yaml | kubectl apply -f -
+      environment:
+        YC_TOKEN: "{{ lookup('env', 'YC_TOKEN') }}"
+      no_log: true
+
+    - name: Copy application Deployment manifest
+      ansible.builtin.copy:
+        src: "{{ app_deployment_source }}"
+        dest: "{{ app_deployment_remote }}"
+        owner: teplov
+        group: teplov
+        mode: '0644'
+
+    - name: Copy application Service manifest
+      ansible.builtin.copy:
+        src: "{{ app_service_source }}"
+        dest: "{{ app_service_remote }}"
+        owner: teplov
+        group: teplov
+        mode: '0644'
+
+    - name: Copy application Ingress manifest
+      ansible.builtin.copy:
+        src: "{{ app_ingress_source }}"
+        dest: "{{ app_ingress_remote }}"
+        owner: teplov
+        group: teplov
+        mode: '0644'
+
+    - name: Apply application Deployment
+      become_user: teplov
+      ansible.builtin.command:
+        cmd: kubectl apply -f {{ app_deployment_remote }}
+
+    - name: Apply application Service
+      become_user: teplov
+      ansible.builtin.command:
+        cmd: kubectl apply -f {{ app_service_remote }}
+
+    - name: Apply application Ingress
+      become_user: teplov
+      ansible.builtin.command:
+        cmd: kubectl apply -f {{ app_ingress_remote }}
+
+    - name: Wait for application rollout
+      become_user: teplov
+      ansible.builtin.command:
+        cmd: kubectl rollout status deployment/diplom-app --timeout=5m
+
+    - name: Show application resources
+      become_user: teplov
+      ansible.builtin.command:
+        cmd: kubectl get deployment,service,ingress diplom-app
+      register: app_resources
+      changed_when: false
+
+    - name: Show application resources
+      ansible.builtin.debug:
+        var: app_resources.stdout
