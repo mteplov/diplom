@@ -4,14 +4,13 @@ terraform {
   required_providers {
     yandex = {
       source  = "yandex-cloud/yandex"
-      version = "~> 0.140"
+      version = "~> 0.230"
     }
   }
 }
 
 provider "yandex" {
-  cloud_id                 = var.cloud_id
-  folder_id                = var.folder_id
-  zone                     = var.zone
-  service_account_key_file = "/home/teplov/terraform-sa-key.json"
+  cloud_id  = var.cloud_id
+  folder_id = var.folder_id
+  zone      = var.zone
 }
