@@ -4,9 +4,11 @@ on:
   push:
     branches:
       - master
+
   pull_request:
     branches:
       - master
+
   workflow_dispatch:
 
 env:
@@ -28,6 +30,7 @@ env:
 
 jobs:
   terraform:
+    name: Terraform validation
     runs-on: self-hosted
 
     defaults:
@@ -38,8 +41,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Terraform version
+      - name: Show Terraform version
         run: terraform version
+
+      - name: Configure Terraform provider installation
+        run: |
+          cp "$GITHUB_WORKSPACE/terraform/.terraformrc" "$HOME/.terraformrc"
 
       - name: Terraform init
         run: |
@@ -56,4 +63,6 @@ jobs:
         run: terraform validate -no-color
 
       - name: Terraform plan
-        run: terraform plan -input=false -no-color
+        run: terraform plan \
+          -input=false \
+          -no-color
