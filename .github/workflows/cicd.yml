@@ -30,6 +30,7 @@ env:
   REGISTRY_ID: crp6gcfckbknlsc51u2f
   IMAGE_NAME: diplom-app
 
+
 jobs:
 
   terraform-plan:
@@ -41,14 +42,18 @@ jobs:
         working-directory: terraform
 
     steps:
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Show Terraform version
+
+      - name: Terraform version
         run: terraform version
 
-      - name: Configure Terraform provider installation
+
+      - name: Configure Terraform provider
         run: cp "$GITHUB_WORKSPACE/terraform/.terraformrc" "$HOME/.terraformrc"
+
 
       - name: Terraform init
         run: |
@@ -58,14 +63,18 @@ jobs:
             -reconfigure \
             -backend-config="bucket=${TF_STATE_BUCKET}"
 
-      - name: Terraform format check
+
+      - name: Terraform fmt
         run: terraform fmt -check -recursive
+
 
       - name: Terraform validate
         run: terraform validate -no-color
 
+
       - name: Terraform plan
         run: terraform plan -input=false -no-color
+
 
 
   terraform-apply:
@@ -78,14 +87,18 @@ jobs:
         working-directory: terraform
 
     steps:
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Show Terraform version
+
+      - name: Terraform version
         run: terraform version
 
-      - name: Configure Terraform provider installation
+
+      - name: Configure Terraform provider
         run: cp "$GITHUB_WORKSPACE/terraform/.terraformrc" "$HOME/.terraformrc"
+
 
       - name: Terraform init
         run: |
@@ -95,49 +108,66 @@ jobs:
             -reconfigure \
             -backend-config="bucket=${TF_STATE_BUCKET}"
 
+
       - name: Terraform apply
         run: terraform apply -input=false -auto-approve -no-color
+
 
 
   docker-build:
     name: Docker Build and Push
     needs: terraform-apply
+
+    if: startsWith(github.ref, 'refs/tags/v')
+
     runs-on: self-hosted
 
+
     steps:
+
       - name: Checkout repository
         uses: actions/checkout@v4
+
+
 
       - name: Check Docker
         run: |
           docker --version
           docker info >/dev/null
-          echo "DOCKER_OK"
+          echo DOCKER_OK
 
-      - name: Set Docker image
+
+
+      - name: Set Docker image tag
         shell: bash
         run: |
+
           if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
             IMAGE_TAG="${GITHUB_REF_NAME}"
           else
             IMAGE_TAG="${GITHUB_SHA::7}"
           fi
+
           IMAGE="${REGISTRY}/${REGISTRY_ID}/${IMAGE_NAME}:${IMAGE_TAG}"
 
           echo "IMAGE_TAG=${IMAGE_TAG}" >> "$GITHUB_ENV"
           echo "IMAGE=${IMAGE}" >> "$GITHUB_ENV"
 
-          echo "Docker image:"
-          echo "${IMAGE}"
+          echo "IMAGE=${IMAGE}"
+
+
 
       - name: Login to Yandex Container Registry
         env:
           YC_TOKEN: ${{ secrets.YC_TOKEN }}
+
         run: |
           echo "$YC_TOKEN" | docker login \
             --username iam \
             --password-stdin \
             "$REGISTRY"
+
+
 
       - name: Build Docker image
         run: |
@@ -146,46 +176,71 @@ jobs:
             -t "${IMAGE}" \
             ./app
 
+
+
       - name: Push Docker image
-        run: docker push "${IMAGE}"
+        run: |
+          docker push "${IMAGE}"
+
 
 
   kubernetes-deploy:
+
     name: Deploy to Kubernetes
+
     needs: docker-build
+
+    if: startsWith(github.ref, 'refs/tags/v')
+
     runs-on: self-hosted
 
+
     steps:
+
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
+
+
       - name: Set Docker image
+
         shell: bash
+
         run: |
+
           if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
             IMAGE_TAG="${GITHUB_REF_NAME}"
           else
             IMAGE_TAG="${GITHUB_SHA::7}"
           fi
+
           IMAGE="${REGISTRY}/${REGISTRY_ID}/${IMAGE_NAME}:${IMAGE_TAG}"
 
           echo "IMAGE=${IMAGE}" >> "$GITHUB_ENV"
 
-          echo "Deploying:"
+          echo "Deploy image:"
           echo "${IMAGE}"
 
-      - name: Check kubectl
-        run: kubectl version --client
 
-      - name: Check Kubernetes access
+
+      - name: Kubernetes access
+
         run: |
+
           kubectl cluster-info
           kubectl get nodes
 
-      - name: Refresh Kubernetes registry secret
+
+
+      - name: Refresh Yandex registry secret
+
         env:
+
           YC_TOKEN: ${{ secrets.YC_TOKEN }}
+
         run: |
+
           kubectl create secret docker-registry yc-registry-secret \
             --docker-server=cr.yandex \
             --docker-username=iam \
@@ -194,30 +249,54 @@ jobs:
             --dry-run=client \
             -o yaml | kubectl apply -f -
 
+
+
       - name: Apply Kubernetes manifests
+
         run: |
+
           kubectl apply -f kubernetes/app/service.yaml
           kubectl apply -f kubernetes/app/deployment.yaml
 
+
+
       - name: Deploy application image
+
         run: |
+
           kubectl set image deployment/diplom-app \
             diplom-app="${IMAGE}"
 
-      - name: Wait for rollout
+
+
+      - name: Rollout status
+
         run: |
+
           kubectl rollout status deployment/diplom-app --timeout=5m
 
+
+
       - name: Show deployment
+
         run: |
+
           kubectl get deployment diplom-app
           kubectl get pods -l app=diplom-app -o wide
 
+
+
       - name: Show deployed image
+
         run: |
+
           kubectl get deployment diplom-app \
             -o jsonpath='{.spec.template.spec.containers[0].image}{"\n"}'
 
+
+
       - name: Test application
+
         run: |
+
           curl -I http://127.0.0.1/app
