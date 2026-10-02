@@ -1,4 +1,21 @@
-# Diplom project — Kubernetes CI/CD platform
+# Diplom project — Kubernetes CI/CD platform- Teplov Mihail
+# Созданные ресурсы
+http://111.88.246.194/app - Приложение  
+http://111.88.246.194/   - Grafana  
+Login  admin   
+Pass   A7KkZ9zxWW1Pj8inAGREYgds  (Пароль генерируется автоматически при создании машин, выходит после выполнения скрипта)    
+# Скриншоты
+
+![1](./img/1.jpg)
+![10](./img/10.jpg)
+![2](./img/2.jpg)
+![3](./img/3.jpg)
+![4](./img/4.jpg)
+![5](./img/5.jpg)
+![6](./img/6.jpg)
+![7](./img/7.jpg)
+![8](./img/8.jpg)
+![9](./img/9.jpg)
 
 ## Overview
 
@@ -13,68 +30,80 @@
 
 ---
 
-# Architecture
-Developer
-|
-|
-GitHub Repository
-|
-|
-GitHub Actions
-|
-+----------------------+
-| |
-Terraform Docker Build
-| |
-| |
-Yandex Cloud Yandex Container Registry
-|
-|
-Kubernetes Cluster
-|
-|
-NGINX Ingress
-|
-|
-Application Pods
+## Architecture
+
+```mermaid
+flowchart TD
+    DEV[Developer]
+
+    DEV --> GH[GitHub Repository]
+
+    GH --> GA[GitHub Actions]
+
+    GA --> TF[Terraform Plan / Apply]
+    GA --> DB[Docker Build]
+
+    TF --> YC[Yandex Cloud]
+
+    DB --> CR[Yandex Container Registry]
+
+    CR --> K8S[Kubernetes Cluster]
+
+    K8S --> ING[NGINX Ingress]
+
+    ING --> APP[Application Pods]
+```
+
 
 
 ---
 
-# Project structure
+## Project structure
 
-
+```text
 .
-├── app/ # исходный код приложения
+├── app/                         # исходный код приложения
 │
-├── terraform/ # Terraform конфигурация
-│ ├── network.tf # сеть
-│ ├── instances.tf # виртуальные машины
-│ ├── images.tf # образы VM
-│ ├── outputs.tf # outputs
-│ └── variables.tf # переменные
+├── terraform/                   # Terraform конфигурация
+│   ├── network.tf               # создание сети
+│   ├── instances.tf             # виртуальные машины
+│   ├── images.tf                # образы VM
+│   ├── outputs.tf               # вывод IP и параметров
+│   └── variables.tf             # переменные Terraform
 │
-├── ansible/ # настройка серверов
+├── ansible/                     # настройка серверов
 │
-├── kubernetes/
-│ └── app/
-│ ├── deployment.yaml # Kubernetes Deployment
-│ ├── service.yaml # Kubernetes Service
-│ └── ingress.yaml # внешний доступ
+├── kubernetes/                  # Kubernetes manifests
+│   └── app/
+│       ├── deployment.yaml      # Kubernetes Deployment
+│       ├── service.yaml         # Kubernetes Service
+│       └── ingress.yaml         # внешний доступ через NGINX
 │
-├── deploy.sh # автоматический запуск инфраструктуры
-├── deploy.sh.bak # резервная копия
+├── deploy.sh                    # автоматический запуск инфраструктуры
+├── deploy.sh.bak                # резервная копия deploy script
 │
 ├── .github/
-│ └── workflows/
-│ └── cicd.yml # CI/CD pipeline
+│   └── workflows/
+│       └── cicd.yml             # GitHub Actions CI/CD pipeline
 │
-├── docs/ # документация
+├── docs/                        # дополнительная документация
 │
-├── ansible.cfg
+├── ansible.cfg                  # конфигурация Ansible
 │
-└── README.md
+└── README.md                    # документация проекта
+```
 
+## Components
+
+| Component | Purpose |
+|-----------|---------|
+| Terraform | Создание инфраструктуры Yandex Cloud |
+| Ansible | Первичная настройка серверов |
+| Docker | Сборка контейнерного образа приложения |
+| Yandex Container Registry | Хранение Docker image |
+| Kubernetes | Запуск и управление приложением |
+| NGINX Ingress | Внешний HTTP доступ |
+| GitHub Actions | Автоматизация CI/CD pipeline |
 
 ---
 
@@ -97,24 +126,27 @@ Application Pods
 7. Развертывание приложения.
 
 
-После выполнения проверить:
 
+## Проверка Kubernetes кластера
 
+После выполнения установки проверить состояние нод:
+
+```bash
 kubectl get nodes
-
+```
 
 Ожидаемый результат:
 
-
-NAME STATUS
-k8s-master-01 Ready
-k8s-worker-01 Ready
-k8s-worker-02 Ready
-
+```text
+NAME            STATUS   ROLES           AGE   VERSION
+k8s-master-01   Ready    control-plane   ...   ...
+k8s-worker-01   Ready    <none>          ...   ...
+k8s-worker-02   Ready    <none>          ...   ...
+```
 
 ---
 
-# Terraform
+## Terraform Infrastructure
 
 Terraform управляет инфраструктурой Yandex Cloud.
 
@@ -125,277 +157,217 @@ Terraform управляет инфраструктурой Yandex Cloud.
 - виртуальные машины;
 - Kubernetes узлы.
 
+### Terraform commands
 
-Команды:
+Проверка конфигурации:
 
-Проверка:
-
-
+```bash
 terraform validate
+```
 
+Создание плана изменений:
 
-План:
-
-
+```bash
 terraform plan
+```
 
+Применение инфраструктуры:
 
-Применение:
-
-
+```bash
 terraform apply
+```
 
+Получение информации о созданных ресурсах:
 
-
-Получить созданные ресурсы:
-
-
+```bash
 terraform output
+```
+
+Пример вывода:
+
+```text
+k8s_master_internal_ip = "10.20.10.31"
+k8s_master_public_ip   = "111.88.246.194"
+
+k8s_worker_01_internal_ip = "10.20.20.17"
+k8s_worker_01_public_ip   = "51.250.20.241"
+
+k8s_worker_02_internal_ip = "10.20.30.7"
+k8s_worker_02_public_ip   = "84.252.135.237"
+```
 
 
 ---
 
-# Kubernetes
+## Kubernetes
 
-Приложение разворачивается в Kubernetes.
+Приложение разворачивается и управляется в Kubernetes.
 
+### Deployment
 
-Deployment:
+Проверка состояния Deployment:
 
-
+```bash
 kubectl get deployment diplom-app
-
-
-
-Pods:
-
-
-kubectl get pods -l app=diplom-app -o wide
-
-
-
-Service:
-
-
-kubectl get svc diplom-app
-
-
-
-Ingress:
-
-
-kubectl get ingress
-
-
----
-
-# Application check
-
-Проверка приложения:
-
-
-curl -I http://127.0.0.1/app
-
-
-
-Успешный ответ:
-
-
-HTTP/1.1 200 OK
-
-
----
-
-# Docker Registry
-
-Образы хранятся в Yandex Container Registry.
-
-
-Registry:
-
-
-cr.yandex/crp6gcfckbknlsc51u2f/diplom-app
-
-
-
-Проверить текущий image:
-
-
-kubectl get deployment diplom-app
--o jsonpath='{.spec.template.spec.containers[0].image}'
-
-
----
-
-# CI/CD GitHub Actions
-
-Workflow:
-
-
-.github/workflows/cicd.yml
-
-
-
-## Commit to master
-
-При обычном изменении выполняется:
-
-
-Terraform Plan
-|
-Terraform Apply
-
-
-
----
-
-## Release deployment
-
-Для выпуска новой версии создается tag:
-
-
-
-git tag v1.0.0
-
-git push origin v1.0.0
-
-
-
-После этого выполняется полный pipeline:
-
-
-
-Terraform Plan
-|
-Terraform Apply
-|
-Docker Build
-|
-Docker Push
-|
-Kubernetes Deploy
-
-
-
-Docker image получает версию:
-
-
-cr.yandex/crp6gcfckbknlsc51u2f/diplom-app:v1.0.0
-
-
----
-
-# Required secrets and variables
-
-Секреты не хранятся в Git.
-
-
-GitHub:
-
-
-Repository
--> Settings
--> Secrets and variables
--> Actions
-
-
-
-## Secrets
-
-
-YC_TOKEN
-
-AWS_ACCESS_KEY_ID
-
-AWS_SECRET_ACCESS_KEY
-
-TF_VAR_PASSWORD_HASH
-
-TF_VAR_SSH_PUBLIC_KEY
-
-
-
-## Variables
-
-
-YC_CLOUD_ID
-
-YC_FOLDER_ID
-
-YC_ZONE
-
-TF_STATE_BUCKET
-
-
----
-
-# Yandex Cloud information
-
-После Terraform apply получить:
-
-
-
-terraform output
-
-
+```
 
 Пример:
 
+```text
+NAME          READY   UP-TO-DATE   AVAILABLE
+diplom-app    2/2     2            2
+```
 
-k8s_master_public_ip = <public_ip>
+### Pods
 
-worker_01_private_ip = <private_ip>
+Проверка запущенных контейнеров:
 
-worker_02_private_ip = <private_ip>
+```bash
+kubectl get pods -l app=diplom-app -o wide
+```
 
+Пример:
 
+```text
+NAME                           READY   STATUS    IP
+diplom-app-xxxxxxxxxx-xxxxx    1/1     Running   192.168.x.x
+diplom-app-xxxxxxxxxx-xxxxx    1/1     Running   192.168.x.x
+```
+
+### Service
+
+Проверка Kubernetes Service:
+
+```bash
+kubectl get svc diplom-app
+```
+
+Пример:
+
+```text
+NAME          TYPE        CLUSTER-IP      PORT(S)
+diplom-app    ClusterIP   10.x.x.x        80/TCP
+```
+
+### Ingress
+
+Проверка внешнего доступа:
+
+```bash
+kubectl get ingress
+```
+
+Пример:
+
+```text
+NAME          CLASS   ADDRESS
+diplom-app    nginx   10.x.x.x
+```
+---
+
+## Kubernetes
+
+Приложение разворачивается и управляется в Kubernetes.
+
+Kubernetes manifests находятся в директории:
+
+```text
+kubernetes/app/
+├── deployment.yaml
+├── service.yaml
+└── ingress.yaml
+```
 
 ---
 
-# Kubernetes access
+### Deployment
 
-SSH:
+Deployment отвечает за запуск и управление репликами приложения.
 
+Проверка состояния Deployment:
 
-ssh ubuntu@<k8s_master_public_ip>
+```bash
+kubectl get deployment diplom-app
+```
 
+Пример результата:
 
-
-Проверка кластера:
-
-
-kubectl cluster-info
-
-kubectl get nodes
-
-
----
-
-# Failure test
-
-Для проверки восстановления можно заменить image:
-
-
-
-kubectl set image deployment/diplom-app
-diplom-app=cr.yandex/crp6gcfckbknlsc51u2f/diplom-app:does-not-exist
-
-
-
-Kubernetes создаст новую replica, но рабочие pod останутся доступны.
-
-
-После исправления через CI/CD приложение восстанавливается автоматически.
+```text
+NAME          READY   UP-TO-DATE   AVAILABLE
+diplom-app    2/2     2            2
+```
 
 ---
 
-# Result
+### Pods
 
-В результате реализована полноценная DevOps цепочка:
+Проверка запущенных экземпляров приложения:
 
-- Terraform управляет инфраструктурой;
-- Ansible выполняет настройку серверов;
-- Docker создает версии приложения;
-- Yandex Container Registry хранит образы;
-- Kubernetes выполняет deployment;
-- GitHub Actions автоматизирует CI/CD процесс.
+```bash
+kubectl get pods -l app=diplom-app -o wide
+```
+
+Пример результата:
+
+```text
+NAME                           READY   STATUS    IP
+diplom-app-xxxxxxxxxx-xxxxx    1/1     Running   192.168.x.x
+diplom-app-xxxxxxxxxx-xxxxx    1/1     Running   192.168.x.x
+```
+
+Ожидаемый статус:
+
+```text
+STATUS: Running
+READY: 1/1
+```
+
+---
+
+### Service
+
+Service предоставляет внутренний доступ к приложению внутри Kubernetes.
+
+Проверка Service:
+
+```bash
+kubectl get svc diplom-app
+```
+
+Пример результата:
+
+```text
+NAME          TYPE        CLUSTER-IP      PORT(S)
+diplom-app    ClusterIP   10.x.x.x        80/TCP
+```
+
+---
+
+### Ingress
+
+Ingress обеспечивает внешний HTTP доступ к приложению через NGINX Ingress Controller.
+
+Проверка Ingress:
+
+```bash
+kubectl get ingress
+```
+
+Пример результата:
+
+```text
+NAME          CLASS   ADDRESS
+diplom-app    nginx   10.x.x.x
+```
+
+Проверка доступности приложения:
+
+```bash
+curl -I http://<external-ip>/app
+```
+
+Ожидаемый результат:
+
+```text
+HTTP/1.1 200 OK
+```
