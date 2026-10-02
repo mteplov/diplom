@@ -1,9 +1,13 @@
 # Diplom project — Kubernetes CI/CD platform- Teplov Mihail
 # Созданные ресурсы
-http://111.88.246.194/app - Приложение  
-http://111.88.246.194/   - Grafana  
-Login  admin   
-Pass   A7KkZ9zxWW1Pj8inAGREYgds  (Пароль генерируется автоматически при создании машин, выходит после выполнения скрипта)    
+
+Grafana:
+  URL      : http://51.250.12.120/
+  User     : admin
+  Password : CgGUv6rfJHpGdDdtx0WJsJif    (Пароль генерируется автоматически при создании машин, выходит после выполнения скрипта)  
+
+Application:
+  http://51.250.12.120/app     
 # Скриншоты
 
 ![1](./img/1.jpg)
