@@ -109,13 +109,6 @@ jobs:
         run: |
           echo '${{ secrets.YC_SERVICE_ACCOUNT_KEY }}' > /tmp/terraform-sa-key.json
 
-          yc config profile create terraform-ci || true
-
-          yc config set service-account-key /tmp/terraform-sa-key.json
-
-          yc config set folder-id "${TF_VAR_folder_id}"
-
-          yc config set cloud-id "${TF_VAR_cloud_id}"
 
       - name: Terraform init
         run: |
