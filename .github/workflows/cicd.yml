@@ -265,6 +265,20 @@ jobs:
 
 
 
+      - name: Get IAM token for Kubernetes registry secret
+        env:
+          YC_SERVICE_ACCOUNT_KEY: ${{ secrets.YC_SERVICE_ACCOUNT_KEY }}
+        run: |
+          echo "$YC_SERVICE_ACCOUNT_KEY" > /tmp/sa-key.json
+
+          yc config profile create sa-profile || true
+          yc config set service-account-key /tmp/sa-key.json
+
+          IAM_TOKEN=$(yc iam create-token)
+
+          echo "YC_IAM_TOKEN=$IAM_TOKEN" >> $GITHUB_ENV
+
+
       - name: Refresh Yandex registry secret
 
         env:
