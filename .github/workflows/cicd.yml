@@ -169,12 +169,22 @@ jobs:
 
 
 
+      - name: Get IAM token from service account key
+        env:
+          YC_SERVICE_ACCOUNT_KEY: ${{ secrets.YC_SERVICE_ACCOUNT_KEY }}
+        run: |
+          echo "$YC_SERVICE_ACCOUNT_KEY" > /tmp/sa-key.json
+
+          IAM_TOKEN=$(curl -s             --request POST             --header "Content-Type: application/json"             --data @/tmp/sa-key.json             https://iam.api.cloud.yandex.net/iam/v1/tokens | jq -r '.iamToken')
+
+          echo "YC_IAM_TOKEN=$IAM_TOKEN" >> $GITHUB_ENV
+
       - name: Login to Yandex Container Registry
         env:
           YC_SERVICE_ACCOUNT_KEY: ${{ secrets.YC_SERVICE_ACCOUNT_KEY }}
 
         run: |
-          echo "$YC_TOKEN" | docker login \
+          echo "$YC_IAM_TOKEN" | docker login \
             --username iam \
             --password-stdin \
             "$REGISTRY"
@@ -256,7 +266,7 @@ jobs:
           kubectl create secret docker-registry yc-registry-secret \
             --docker-server=cr.yandex \
             --docker-username=iam \
-            --docker-password="$YC_TOKEN" \
+            --docker-password="$YC_IAM_TOKEN" \
             --namespace=default \
             --dry-run=client \
             -o yaml | kubectl apply -f -
