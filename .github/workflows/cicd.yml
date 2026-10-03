@@ -12,7 +12,7 @@ on:
 env:
   TF_IN_AUTOMATION: "true"
 
-  YC_TOKEN: ${{ secrets.YC_TOKEN }}
+  YC_SERVICE_ACCOUNT_KEY: ${{ secrets.YC_SERVICE_ACCOUNT_KEY }}
 
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -54,6 +54,18 @@ jobs:
       - name: Configure Terraform provider
         run: cp "$GITHUB_WORKSPACE/terraform/.terraformrc" "$HOME/.terraformrc"
 
+
+      - name: Configure Yandex Cloud service account
+        run: |
+          echo '${{ secrets.YC_SERVICE_ACCOUNT_KEY }}' > /tmp/terraform-sa-key.json
+
+          yc config profile create terraform-ci || true
+
+          yc config set service-account-key /tmp/terraform-sa-key.json
+
+          yc config set folder-id "${TF_VAR_folder_id}"
+
+          yc config set cloud-id "${TF_VAR_cloud_id}"
 
       - name: Terraform init
         run: |
@@ -99,6 +111,18 @@ jobs:
       - name: Configure Terraform provider
         run: cp "$GITHUB_WORKSPACE/terraform/.terraformrc" "$HOME/.terraformrc"
 
+
+      - name: Configure Yandex Cloud service account
+        run: |
+          echo '${{ secrets.YC_SERVICE_ACCOUNT_KEY }}' > /tmp/terraform-sa-key.json
+
+          yc config profile create terraform-ci || true
+
+          yc config set service-account-key /tmp/terraform-sa-key.json
+
+          yc config set folder-id "${TF_VAR_folder_id}"
+
+          yc config set cloud-id "${TF_VAR_cloud_id}"
 
       - name: Terraform init
         run: |
@@ -159,7 +183,7 @@ jobs:
 
       - name: Login to Yandex Container Registry
         env:
-          YC_TOKEN: ${{ secrets.YC_TOKEN }}
+          YC_SERVICE_ACCOUNT_KEY: ${{ secrets.YC_SERVICE_ACCOUNT_KEY }}
 
         run: |
           echo "$YC_TOKEN" | docker login \
@@ -237,7 +261,7 @@ jobs:
 
         env:
 
-          YC_TOKEN: ${{ secrets.YC_TOKEN }}
+          YC_SERVICE_ACCOUNT_KEY: ${{ secrets.YC_SERVICE_ACCOUNT_KEY }}
 
         run: |
 
