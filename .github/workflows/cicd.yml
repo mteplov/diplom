@@ -55,17 +55,10 @@ jobs:
         run: cp "$GITHUB_WORKSPACE/terraform/.terraformrc" "$HOME/.terraformrc"
 
 
-      - name: Configure Yandex Cloud service account
+      - name: Configure Yandex Cloud credentials
         run: |
           echo '${{ secrets.YC_SERVICE_ACCOUNT_KEY }}' > /tmp/terraform-sa-key.json
-
-          yc config profile create terraform-ci || true
-
-          yc config set service-account-key /tmp/terraform-sa-key.json
-
-          yc config set folder-id "${TF_VAR_folder_id}"
-
-          yc config set cloud-id "${TF_VAR_cloud_id}"
+          echo "YC_SERVICE_ACCOUNT_KEY_FILE=/tmp/terraform-sa-key.json" >> $GITHUB_ENV
 
       - name: Terraform init
         run: |
