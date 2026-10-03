@@ -169,15 +169,25 @@ jobs:
 
 
 
-      - name: Get IAM token from service account key
+      - name: Install yc CLI
+        run: |
+          curl -sSL https://storage.yandexcloud.net/yandexcloud-yc/install.sh | bash
+          echo "$HOME/yandex-cloud/bin" >> $GITHUB_PATH
+
+
+      - name: Get IAM token
         env:
           YC_SERVICE_ACCOUNT_KEY: ${{ secrets.YC_SERVICE_ACCOUNT_KEY }}
         run: |
           echo "$YC_SERVICE_ACCOUNT_KEY" > /tmp/sa-key.json
 
-          IAM_TOKEN=$(curl -s             --request POST             --header "Content-Type: application/json"             --data @/tmp/sa-key.json             https://iam.api.cloud.yandex.net/iam/v1/tokens | jq -r '.iamToken')
+          yc config profile create sa-profile || true
+          yc config set service-account-key /tmp/sa-key.json
+
+          IAM_TOKEN=$(yc iam create-token)
 
           echo "YC_IAM_TOKEN=$IAM_TOKEN" >> $GITHUB_ENV
+
 
       - name: Login to Yandex Container Registry
         env:
